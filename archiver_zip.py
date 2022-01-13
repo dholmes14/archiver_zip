@@ -16,9 +16,9 @@ for i in range(1000):
    x += i
 
 #Define filepaths where path= folder containing data to be archived, zipped_path for zip folders to be moved to if they match with original, folder for md5 files
-path='/mnt/c/Users/david/Documents/data_archiving/data_for_aws_archive/'
-zipped_path='/mnt/c/Users/david/Documents/data_archiving/zipped_data_for_aws_archive/'
-md5_path='/mnt/c/Users/david/Documents/data_archiving/md5_files/'
+path='/home/david/Documents/archiver_zip/input/'
+zipped_path='/home/david/Documents/archiver_zip/zipped/'
+md5_path='/home/david/Documents/archiver_zip/md5/'
 
 Path(zipped_path).mkdir(parents=True, exist_ok=True)
 Path(md5_path).mkdir(parents=True, exist_ok=True)
@@ -41,11 +41,15 @@ def compare_folder_contents(item):
                 with open(orig_folder + "_contents.txt", "a") as text_file:
                     for item in dirlist:
                         text_file.write(item)
+                sort_cmd=str("sort " + "-o " + orig_folder + "_contents.txt " + orig_folder + "_contents.txt")
+                os.system(sort_cmd)
             for y in files:
                 FileNames = (os.path.join(root, y)+'\n')
                 with open(orig_folder + "_contents.txt", "a") as text_file:
                     for item in FileNames:
                         text_file.write(item)
+                sort_cmd=str("sort " + "-o " + orig_folder + "_contents.txt " + orig_folder + "_contents.txt")
+                os.system(sort_cmd)
 
         with open(orig_folder + "_contents.txt", "rb") as f:
             file_hash = hashlib.md5()
@@ -69,6 +73,9 @@ def compare_folder_contents(item):
                 for element in paths_to_images:
                     text_file.write(element + "\n")
                 text_file.close()
+                sort_cmd=str("sort " + "-o " + zipped_file+"_zip_contents.txt " + zipped_file+"_zip_contents.txt")
+                os.system(sort_cmd)
+
 
         with open(zipped_file + "_zip_contents.txt", "rb") as f:
             file_hash = hashlib.md5()
