@@ -25,72 +25,52 @@ Path(md5_path).mkdir(parents=True, exist_ok=True)
 
 #Make zips of all folders in path variable
 def make_zip_archive(dir_name):
-    #directory_contents = os.listdir(path)
-    #for dir_name in directory_contents:
     shutil.make_archive(path+dir_name, 'zip', path+dir_name)
 
-#List contents of original folder and zipfolder into text files, create md5sum of list of contents.
-def compare_folder_contents(item):
-    #for original folder
+
+def original_folder_md5_check(item):
+    checksums=[]
     if os.path.isdir(path+item):
         original_folder = path+item
         orig_folder=item
         for root, dirs, files in os.walk(original_folder):
-            for x in dirs:
-                dirlist= (os.path.join(root, x)+'/'+'\n')
-                with open(orig_folder + "_contents.txt", "a") as text_file:
-                    for item in dirlist:
-                        text_file.write(item)
-                sort_cmd=str("sort " + "-o " + orig_folder + "_contents.txt " + orig_folder + "_contents.txt")
-                os.system(sort_cmd)
-            for y in files:
-                FileNames = (os.path.join(root, y)+'\n')
-                with open(orig_folder + "_contents.txt", "a") as text_file:
-                    for item in FileNames:
-                        text_file.write(item)
-                sort_cmd=str("sort " + "-o " + orig_folder + "_contents.txt " + orig_folder + "_contents.txt")
-                os.system(sort_cmd)
+            for x in files:
+                FileNames = (os.path.join(root, x))
+                file_array=FileNames.split('\n')
+                #print(file_array)
+                for file in file_array:
+                    with open(file, 'rb') as check_file:
+                        checksums.append([file, hashlib.md5(check_file.read()).hexdigest()])
 
-        with open(orig_folder + "_contents.txt", "rb") as f:
-            file_hash = hashlib.md5()
-            while chunk := f.read(8192):
-                file_hash.update(chunk)
-        original_folder_md5sum=file_hash.hexdigest()
-        print(original_folder_md5sum + " : " + orig_folder)
-        with open(orig_folder + "_md5.txt", "w") as md5sum_file:
-            md5sum_file.write(original_folder_md5sum)
-            original_folder_md5sum_file=orig_folder + "_md5.txt"
+                #print(checksums)
+                with open(orig_folder + "_md5.txt", "w") as text_file:
+                    for line in checksums:
+                        text_file.write(" ".join(line) + "\n")
 
-    #for zipfolder
-    if zipfile.is_zipfile(path+item):
-        zip_fullname=item
-        zipped_file=item.replace(".zip", "")
-        with ZipFile(path+item, 'r') as zipObj:
-            listOfiles = zipObj.infolist()
-            docx_name_list = zipObj.infolist()
-            paths_to_images = [os.path.join(path, zipped_file, x.filename) for x in docx_name_list]
-            with open(zipped_file+"_zip_contents.txt", "w") as text_file:
-                for element in paths_to_images:
-                    text_file.write(element + "\n")
-                text_file.close()
-                sort_cmd=str("sort " + "-o " + zipped_file+"_zip_contents.txt " + zipped_file+"_zip_contents.txt")
-                os.system(sort_cmd)
-
-
-        with open(zipped_file + "_zip_contents.txt", "rb") as f:
-            file_hash = hashlib.md5()
-            while chunk := f.read(8192):
-                file_hash.update(chunk)
-        zipped_folder_md5sum=file_hash.hexdigest()
-        print(zipped_folder_md5sum + " : " + zip_fullname)
-        with open(zipped_file + "_zip_md5.txt", "w") as md5sum_file:
-            md5sum_file.write(zipped_folder_md5sum)
-            zipped_folder_md5sum_file=zipped_file + "_zip_md5.txt"
+def zipfolder_md5_check():
+    checksums=[]
+    for item in os.listdir(path):
+        if zipfile.is_zipfile(path+item):
+            with zipfile.ZipFile(path+item, 'r') as zip_ref:
+                zipped_file=item
+                zipped_folder_name=item.replace(".zip", "")
+                zipfile.ZipFile(path+zipped_file).extractall(path+zipped_folder_name+"_temp")
+                for root, dirs, files in os.walk(path+zipped_folder_name+"_temp"):
+                    for y in files:
+                        FileNames = (os.path.join(root, y))
+                        file_array=FileNames.split('\n')
+                        for file in file_array:
+                            with open(file, 'rb') as check_file:
+                                checksums.append([file, hashlib.md5(check_file.read()).hexdigest()])
+                        with open(zipped_folder_name + "_zip_md5.txt", "w") as text_file:
+                            for line in checksums:
+                                edited_line = [item.replace("_temp", "") for item in line]
+                                text_file.write(" ".join(edited_line) + "\n")
 
 #compare the original folder contents with the zipfolder to ensure zip process completed successfully
 #Zipfolders and md5 files are only moved if the original folder contents and zipfolder contents match.
 def move_matching_zipfolders():
-    for item in os.listdir('./'):
+    for item in os.listdir("./"):
         if item.endswith("_zip_md5.txt"):
             zipped_folder_md5sum_file = item
             x=item.split('_zip_md5.txt')
@@ -110,11 +90,11 @@ def move_matching_zipfolders():
             if filecompare_result == False:
                 print("problem with md5 match for " + original_folder_name + " and " + zipped_folder_name)
 
-#Tidy up folder to remove contents files used to create md5sum
-def remove_comparison_files():
-    for item in os.listdir("./"):
-        if item.endswith("contents.txt"):
-            os.remove(item)
+#Tidy up temp folder
+def remove_temporary_folders():
+    for item in os.listdir(path):
+        if item.endswith("_temp"):
+            shutil.rmtree(path+item)
 
 def processing_time():
     end_time = datetime.datetime.now()
@@ -133,12 +113,12 @@ if __name__ == "__main__":
 
     procs=[]
     for item in os.listdir(path):
-        proc=Process(target=compare_folder_contents, args=(item,))
+        proc=Process(target=original_folder_md5_check, args=(item,))
         proc.start()
         procs.append(proc)
     for proc in procs:
         proc.join()
-
+    zipfolder_md5_check()
     move_matching_zipfolders()
-    remove_comparison_files()
+    remove_temporary_folders()
     processing_time()
