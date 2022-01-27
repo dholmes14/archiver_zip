@@ -47,25 +47,25 @@ def original_folder_md5_check(item):
                     for line in checksums:
                         text_file.write(" ".join(line) + "\n")
 
-def zipfolder_md5_check():
+def zipfolder_md5_check(zipitem):
     checksums=[]
-    for item in os.listdir(path):
-        if zipfile.is_zipfile(path+item):
-            with zipfile.ZipFile(path+item, 'r') as zip_ref:
-                zipped_file=item
-                zipped_folder_name=item.replace(".zip", "")
-                zipfile.ZipFile(path+zipped_file).extractall(path+zipped_folder_name+"_temp")
-                for root, dirs, files in os.walk(path+zipped_folder_name+"_temp"):
-                    for y in files:
-                        FileNames = (os.path.join(root, y))
-                        file_array=FileNames.split('\n')
-                        for file in file_array:
-                            with open(file, 'rb') as check_file:
-                                checksums.append([file, hashlib.md5(check_file.read()).hexdigest()])
-                        with open(zipped_folder_name + "_zip_md5.txt", "w") as text_file:
-                            for line in checksums:
-                                edited_line = [item.replace("_temp", "") for item in line]
-                                text_file.write(" ".join(edited_line) + "\n")
+    #for zipitem in os.listdir(path):
+    if zipfile.is_zipfile(path+zipitem):
+        with zipfile.ZipFile(path+zipitem, 'r') as zip_ref:
+            zipped_file=zipitem
+            zipped_folder_name=zipitem.replace(".zip", "")
+            zipfile.ZipFile(path+zipped_file).extractall(path+zipped_folder_name+"_temp")
+            for root, dirs, files in os.walk(path+zipped_folder_name+"_temp"):
+                for y in files:
+                    FileNames = (os.path.join(root, y))
+                    file_array=FileNames.split('\n')
+                    for file in file_array:
+                        with open(file, 'rb') as check_file:
+                            checksums.append([file, hashlib.md5(check_file.read()).hexdigest()])
+                    with open(zipped_folder_name + "_zip_md5.txt", "w") as text_file:
+                        for line in checksums:
+                            edited_line = [item.replace("_temp", "") for item in line]
+                            text_file.write(" ".join(edited_line) + "\n")
 
 #compare the original folder contents with the zipfolder to ensure zip process completed successfully
 #Zipfolders and md5 files are only moved if the original folder contents and zipfolder contents match.
@@ -103,22 +103,30 @@ def processing_time():
     print(execution_time, " seconds to process")
 
 if __name__ == "__main__":
-    process_list=[]
-    for dir_name in os.listdir(path):
-        p=Process(target=make_zip_archive, args=(dir_name,))
-        p.start()
-        process_list.append(p)
-    for process in process_list:
-        process.join()
+    #process_list=[]
+    #for dir_name in os.listdir(path):
+    #    p=Process(target=make_zip_archive, args=(dir_name,))
+    #    p.start()
+    #    process_list.append(p)
+    #for process in process_list:
+    #    process.join()
 
-    procs=[]
-    for item in os.listdir(path):
-        proc=Process(target=original_folder_md5_check, args=(item,))
-        proc.start()
-        procs.append(proc)
-    for proc in procs:
-        proc.join()
-    zipfolder_md5_check()
-    move_matching_zipfolders()
-    remove_temporary_folders()
+    #procs=[]
+    #for item in os.listdir(path):
+    #    proc=Process(target=original_folder_md5_check, args=(item,))
+    #    proc.start()
+    #    procs.append(proc)
+    #for proc in procs:
+    #    proc.join()
+
+    processes=[]
+    for zipitem in os.listdir(path):
+        p=Process(target=zipfolder_md5_check, args=(zipitem,))
+        p.start()
+        processes.append(p)
+    for process in processes:
+        process.join()
+    #zipfolder_md5_check()
+    #move_matching_zipfolders()
+    #remove_temporary_folders()
     processing_time()
