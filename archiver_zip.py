@@ -103,21 +103,21 @@ def processing_time():
     print(execution_time, " seconds to process")
 
 if __name__ == "__main__":
-    #process_list=[]
-    #for dir_name in os.listdir(path):
-    #    p=Process(target=make_zip_archive, args=(dir_name,))
-    #    p.start()
-    #    process_list.append(p)
-    #for process in process_list:
-    #    process.join()
+    process_list=[]
+    for dir_name in os.listdir(path):
+        p=Process(target=make_zip_archive, args=(dir_name,))
+        p.start()
+        process_list.append(p)
+    for process in process_list:
+        process.join()
 
-    #procs=[]
-    #for item in os.listdir(path):
-    #    proc=Process(target=original_folder_md5_check, args=(item,))
-    #    proc.start()
-    #    procs.append(proc)
-    #for proc in procs:
-    #    proc.join()
+    procs=[]
+    for item in os.listdir(path):
+        proc=Process(target=original_folder_md5_check, args=(item,))
+        proc.start()
+        procs.append(proc)
+    for proc in procs:
+        proc.join()
 
     processes=[]
     for zipitem in os.listdir(path):
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         processes.append(p)
     for process in processes:
         process.join()
-    #zipfolder_md5_check()
-    #move_matching_zipfolders()
-    #remove_temporary_folders()
+    zipfolder_md5_check()
+    move_matching_zipfolders()
+    remove_temporary_folders()
     processing_time()
